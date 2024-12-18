@@ -15,28 +15,41 @@
 package embed
 
 import (
+	"io/fs"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 )
 
 func TestEmbed(t *testing.T) {
-	for _, fileName := range []string{
-		// bare FS embed as sub. coreruleset prefix stripped
-		"tigera.conf",
+	type testCase struct {
+		fs.FS
+		expectedFiles []string
+	}
+	for _, tc := range []*testCase{
+		{TigeraEmbeddedFS, []string{"tigera.conf"}},
+		{RulesetRulesFS, []string{"REQUEST-901-INITIALIZATION.conf"}},
 	} {
-		_, err := FS.Open(fileName)
-		require.NoError(t, err)
+		for _, fileName := range tc.expectedFiles {
+			_, err := tc.FS.Open(fileName)
+			require.NoError(t, err)
+		}
 	}
 }
-
 func TestEmbedAsMap(t *testing.T) {
-	fileMap, err := AsMap(FS)
-	require.NoError(t, err)
-	for _, fileName := range []string{
-		"tigera.conf",
+	type testCase struct {
+		*fsWrapper
+		expectedFiles []string
+	}
+	for _, fileSystem := range []*testCase{
+		{TigeraEmbeddedFS, []string{"tigera.conf"}},
+		{RulesetRulesFS, []string{"REQUEST-901-INITIALIZATION.conf"}},
 	} {
-		_, ok := fileMap[fileName]
-		require.True(t, ok)
+		fileMap, err := fileSystem.AsMap()
+		require.NoError(t, err)
+		for _, fileName := range fileSystem.expectedFiles {
+			_, ok := fileMap[fileName]
+			require.True(t, ok)
+		}
 	}
 }

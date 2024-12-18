@@ -18,7 +18,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io/fs"
 
 	operatorv1 "github.com/tigera/operator/api/v1"
 	crdv1 "github.com/tigera/operator/pkg/apis/crd.projectcalico.org/v1"
@@ -46,8 +45,6 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-
-	coreruleset "github.com/corazawaf/coraza-coreruleset/v4"
 )
 
 const ResourceName = "applicationlayer"
@@ -464,34 +461,18 @@ func (r *ReconcileApplicationLayer) getModSecurityRuleSet(ctx context.Context) (
 	return ruleset, true, nil
 }
 
-func getDefaultCoreRuleset(ctx context.Context) (*corev1.ConfigMap, error) {
-	ruleset, err := embed.AsConfigMap(
+func getDefaultCoreRuleset(_ context.Context) (*corev1.ConfigMap, error) {
+	return embed.TigeraEmbeddedFS.AsConfigMap(
 		applicationlayer.ModSecurityRulesetConfigMapName,
 		common.OperatorNamespace(),
-		embed.FS,
 	)
-	if err != nil {
-		return nil, err
-	}
-
-	return ruleset, nil
 }
 
-func getOWASPCoreRuleSet(ctx context.Context) (*corev1.ConfigMap, error) {
-	owaspCRS, err := fs.Sub(coreruleset.FS, "@owasp_crs")
-	if err != nil {
-		return nil, err
-	}
-	ruleset, err := embed.AsConfigMap(
+func getOWASPCoreRuleSet(_ context.Context) (*corev1.ConfigMap, error) {
+	return embed.RulesetRulesFS.AsConfigMap(
 		applicationlayer.DefaultCoreRuleset,
 		common.OperatorNamespace(),
-		owaspCRS,
 	)
-	if err != nil {
-		return nil, err
-	}
-
-	return ruleset, nil
 }
 
 func validateModSecurityRuleSet(cm *corev1.ConfigMap) error {
