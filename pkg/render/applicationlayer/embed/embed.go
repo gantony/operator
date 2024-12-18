@@ -16,65 +16,20 @@ package embed
 
 import (
 	"embed"
-	"fmt"
 	"io/fs"
-
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var (
-	FS fs.FS
+	TigeraEmbeddedFS *fsWrapper
 	//go:embed coreruleset
 	crsFS embed.FS
 )
 
 func init() {
 	var err error
-	FS, err = fs.Sub(crsFS, "coreruleset")
+	embeddedFS, err := fs.Sub(crsFS, "coreruleset")
 	if err != nil {
 		panic(err)
 	}
-}
-
-func AsMap(fileSystem fs.FS) (map[string]string, error) {
-	res := make(map[string]string)
-	var walkFn fs.WalkDirFunc = func(path string, d fs.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-
-		if d.IsDir() {
-			return err
-		}
-
-		if b, err := fs.ReadFile(fileSystem, path); err != nil {
-			return err
-		} else {
-			res[d.Name()] = string(b)
-		}
-		return nil
-	}
-
-	if err := fs.WalkDir(fileSystem, ".", walkFn); err != nil {
-		return nil, fmt.Errorf("failed to walk core ruleset files (%w)", err)
-	}
-
-	return res, nil
-}
-
-func AsConfigMap(name, namespace string, fileSystem fs.FS) (*corev1.ConfigMap, error) {
-	data, err := AsMap(fileSystem)
-	if err != nil {
-		return nil, err
-	}
-
-	return &corev1.ConfigMap{
-		TypeMeta: metav1.TypeMeta{Kind: "ConfigMap", APIVersion: "v1"},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: namespace,
-		},
-		Data: data,
-	}, nil
+	TigeraEmbeddedFS = NewWrappedFS(embeddedFS)
 }

@@ -17,7 +17,6 @@ package applicationlayer_test
 import (
 	"path/filepath"
 
-	coreruleset "github.com/corazawaf/coraza-coreruleset/v4"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -223,17 +222,15 @@ var _ = Describe("Tigera Secure Application Layer rendering tests", func() {
 	It("should render with l7 collector configuration with resource requests and limits", func() {
 
 		// Should render the correct resources.
-		cm, err := embed.AsConfigMap(
+		cm, err := embed.TigeraEmbeddedFS.AsConfigMap(
 			applicationlayer.ModSecurityRulesetConfigMapName,
 			common.OperatorNamespace(),
-			embed.FS,
 		)
 		Expect(err).To(BeNil())
 
-		defaultCoreRulesetCM, err := embed.AsConfigMap(
+		defaultCoreRulesetCM, err := embed.RulesetRulesFS.AsConfigMap(
 			applicationlayer.DefaultCoreRuleset,
 			common.OperatorNamespace(),
-			coreruleset.FS,
 		)
 		Expect(err).To(BeNil())
 
@@ -532,16 +529,14 @@ var _ = Describe("Tigera Secure Application Layer rendering tests", func() {
 			{name: applicationlayer.ApplicationLayerDaemonsetName, ns: common.CalicoNamespace, group: "apps", version: "v1", kind: "DaemonSet"},
 		}
 		// Should render the correct resources.
-		cm, err := embed.AsConfigMap(
+		cm, err := embed.TigeraEmbeddedFS.AsConfigMap(
 			applicationlayer.ModSecurityRulesetConfigMapName,
 			common.OperatorNamespace(),
-			embed.FS,
 		)
 		Expect(err).To(BeNil())
-		defaultCoreRulesetCM, err := embed.AsConfigMap(
+		defaultCoreRulesetCM, err := embed.RulesetRulesFS.AsConfigMap(
 			applicationlayer.DefaultCoreRuleset,
 			common.OperatorNamespace(),
-			coreruleset.FS,
 		)
 		Expect(err).To(BeNil())
 		component := applicationlayer.ApplicationLayer(&applicationlayer.Config{
